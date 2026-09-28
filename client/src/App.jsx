@@ -41,8 +41,7 @@ const fetchTasks = async () => {
   // ADD TASK
   // -----------------------------
 
- const handleAddTask = async (e) => {
-
+const handleAddTask = async (e) => {
   e.preventDefault();
 
   if (!newTask.title || !newTask.dueDate) {
@@ -51,14 +50,13 @@ const fetchTasks = async () => {
   }
 
   try {
-
     const response = await axios.post(
       "http://localhost:5000/api/tasks",
       newTask
     );
 
-    setTasks([
-      ...tasks,
+    setTasks((currentTasks) => [
+      ...currentTasks,
       response.data
     ]);
 
@@ -72,35 +70,27 @@ const fetchTasks = async () => {
     setShowTaskForm(false);
 
   } catch (error) {
-
     console.error("Failed to create task:", error);
-
     alert("Failed to save task.");
-
   }
 };
-
 
   // -----------------------------
   // DELETE TASK
   // -----------------------------
 
  const handleDeleteTask = async (id) => {
-
   try {
-
     await axios.delete(
       `http://localhost:5000/api/tasks/${id}`
     );
 
-    setTasks(
-      tasks.filter((task) => task._id !== id)
+    setTasks((currentTasks) =>
+      currentTasks.filter((task) => task._id !== id)
     );
 
   } catch (error) {
-
     console.error("Failed to delete task:", error);
-
   }
 };
 
@@ -381,7 +371,7 @@ const fetchTasks = async () => {
 
                   <button
                     className="delete-task"
-                    onClick={() => handleDeleteTask(task.id)}
+                    onClick={() => handleDeleteTask(task._id)}
                   >
                     🗑️
                   </button>
