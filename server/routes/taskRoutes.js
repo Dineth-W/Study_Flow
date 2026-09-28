@@ -1,38 +1,19 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const rateLimit = require("express-rate-limit");
 const Task = require("../models/Task");
 
 const router = express.Router();
-const updateRequestTracker = new Map();
-const UPDATE_WINDOW_MS = 60 * 1000;
-const UPDATE_MAX_REQUESTS = 60;
 
-const limitTaskUpdates = (req, res, next) => {
-
-    const requestKey = req.ip || "unknown";
-    const now = Date.now();
-
-    const existingRecord = updateRequestTracker.get(requestKey);
-
-    if (!existingRecord || now - existingRecord.windowStart >= UPDATE_WINDOW_MS) {
-        updateRequestTracker.set(requestKey, {
-            count: 1,
-            windowStart: now
-        });
-        return next();
+const updateTaskLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        message: "Too many update requests. Please try again later."
     }
-
-    if (existingRecord.count >= UPDATE_MAX_REQUESTS) {
-        return res.status(429).json({
-            message: "Too many update requests. Please try again later."
-        });
-    }
-
-    existingRecord.count += 1;
-    updateRequestTracker.set(requestKey, existingRecord);
-    next();
-
-};
+});
 
 
 // =============================
@@ -94,7 +75,7 @@ router.post("/", async (req, res) => {
 // UPDATE TASK
 // =============================
 
-router.put("/:id", limitTaskUpdates, async (req, res) => {
+router.put("/:id", updateTaskLimiter, async (req, res) => {
 
     try {
 
