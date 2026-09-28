@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const Task = require("../models/Task");
 
 const router = express.Router();
@@ -51,6 +52,74 @@ router.post("/", async (req, res) => {
 
         res.status(400).json({
             message: "Failed to create task",
+            error: error.message
+        });
+
+    }
+
+});
+
+
+// =============================
+// UPDATE TASK
+// =============================
+
+router.put("/:id", async (req, res) => {
+
+    try {
+
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                message: "Invalid task ID"
+            });
+        }
+
+        const allowedFields = [
+            "title",
+            "description",
+            "subject",
+            "dueDate",
+            "priority",
+            "completed"
+        ];
+
+        const updateData = {};
+
+        allowedFields.forEach((field) => {
+            if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+                updateData[field] = req.body[field];
+            }
+        });
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({
+                message: "No valid fields provided for update"
+            });
+        }
+
+        const updatedTask = await Task.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        if (!updatedTask) {
+            return res.status(404).json({
+                message: "Task not found"
+            });
+        }
+
+        res.json(updatedTask);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(400).json({
+            message: "Failed to update task",
             error: error.message
         });
 

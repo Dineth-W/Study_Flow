@@ -19,6 +19,32 @@ function App() {
     priority: "Medium"
   });
 
+  const upcomingTasks = [...tasks]
+    .filter((task) => !task.completed)
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+    .slice(0, 3);
+
+  const getDueLabel = (dueDate) => {
+    const due = new Date(dueDate);
+
+    if (Number.isNaN(due.getTime())) {
+      return "Due date unavailable";
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+
+    const dayDifference = Math.round(
+      (due - today) / (1000 * 60 * 60 * 24)
+    );
+
+    if (dayDifference < 0) return "Overdue";
+    if (dayDifference === 0) return "Due today";
+    if (dayDifference === 1) return "Due tomorrow";
+    return `In ${dayDifference} days`;
+  };
+
   useEffect(() => {
   fetchTasks();
 }, []);
@@ -99,16 +125,22 @@ const handleAddTask = async (e) => {
   // MARK TASK COMPLETE
   // -----------------------------
 
-  const handleCompleteTask = (id) => {
+  const handleCompleteTask = async (id, completed) => {
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/tasks/${id}`,
+        { completed: !completed }
+      );
 
-    setTasks(
-      tasks.map((task) =>
-        task.id === id
-          ? { ...task, completed: !task.completed }
-          : task
-      )
-    );
-
+      setTasks((currentTasks) =>
+        currentTasks.map((task) =>
+          task._id === id ? response.data : task
+        )
+      );
+    } catch (error) {
+      console.error("Failed to update task:", error);
+      alert("Failed to update task.");
+    }
   };
 
 
@@ -222,80 +254,42 @@ const handleAddTask = async (e) => {
 
 
           <div className="urgent-container">
-
-            <div className="urgent-card urgent">
-
-              <div className="card-icon">
-                ⚠️
+            {upcomingTasks.length === 0 ? (
+              <div className="empty-task">
+                No upcoming tasks right now.
               </div>
+            ) : (
+              upcomingTasks.map((task, index) => (
+                <div
+                  className={`urgent-card ${
+                    index === 0 ? "urgent" : "upcoming"
+                  }`}
+                  key={task._id}
+                >
 
-              <div>
+                  <div className="card-icon">
+                    {index === 0 ? "⚠️" : "📅"}
+                  </div>
 
-                <span className="card-label">
-                  URGENT
-                </span>
+                  <div>
 
-                <h3>
-                  DSA Assignment
-                </h3>
+                    <span className="card-label">
+                      {index === 0 ? "URGENT" : "UPCOMING"}
+                    </span>
 
-                <p>
-                  Due tomorrow
-                </p>
+                    <h3>
+                      {task.title}
+                    </h3>
 
-              </div>
+                    <p>
+                      {getDueLabel(task.dueDate)}
+                    </p>
 
-            </div>
+                  </div>
 
-
-            <div className="urgent-card upcoming">
-
-              <div className="card-icon">
-                📅
-              </div>
-
-              <div>
-
-                <span className="card-label">
-                  UPCOMING
-                </span>
-
-                <h3>
-                  Signals & Systems Exam
-                </h3>
-
-                <p>
-                  In 5 days
-                </p>
-
-              </div>
-
-            </div>
-
-
-            <div className="urgent-card upcoming">
-
-              <div className="card-icon">
-                📝
-              </div>
-
-              <div>
-
-                <span className="card-label">
-                  UPCOMING
-                </span>
-
-                <h3>
-                  Electronics Lab Report
-                </h3>
-
-                <p>
-                  In 7 days
-                </p>
-
-              </div>
-
-            </div>
+                </div>
+              ))
+            )}
 
           </div>
 
@@ -342,7 +336,12 @@ const handleAddTask = async (e) => {
 
                   <button
                     className="complete-button"
-                    onClick={() => handleCompleteTask(task.id)}
+                    onClick={() =>
+                      handleCompleteTask(
+                        task._id,
+                        task.completed
+                      )
+                    }
                   >
                     {task.completed ? "✓" : ""}
                   </button>
