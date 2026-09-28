@@ -3,6 +3,36 @@ const mongoose = require("mongoose");
 const Task = require("../models/Task");
 
 const router = express.Router();
+const updateRequestTracker = new Map();
+const UPDATE_WINDOW_MS = 60 * 1000;
+const UPDATE_MAX_REQUESTS = 60;
+
+const limitTaskUpdates = (req, res, next) => {
+
+    const requestKey = req.ip || "unknown";
+    const now = Date.now();
+
+    const existingRecord = updateRequestTracker.get(requestKey);
+
+    if (!existingRecord || now - existingRecord.windowStart >= UPDATE_WINDOW_MS) {
+        updateRequestTracker.set(requestKey, {
+            count: 1,
+            windowStart: now
+        });
+        return next();
+    }
+
+    if (existingRecord.count >= UPDATE_MAX_REQUESTS) {
+        return res.status(429).json({
+            message: "Too many update requests. Please try again later."
+        });
+    }
+
+    existingRecord.count += 1;
+    updateRequestTracker.set(requestKey, existingRecord);
+    next();
+
+};
 
 
 // =============================
@@ -64,7 +94,7 @@ router.post("/", async (req, res) => {
 // UPDATE TASK
 // =============================
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", limitTaskUpdates, async (req, res) => {
 
     try {
 
@@ -97,20 +127,19 @@ router.put("/:id", async (req, res) => {
             });
         }
 
-        const updatedTask = await Task.findByIdAndUpdate(
-            req.params.id,
-            updateData,
-            {
-                new: true,
-                runValidators: true
-            }
-        );
+        const task = await Task.findById(req.params.id);
 
-        if (!updatedTask) {
+        if (!task) {
             return res.status(404).json({
                 message: "Task not found"
             });
         }
+
+        Object.keys(updateData).forEach((field) => {
+            task[field] = updateData[field];
+        });
+
+        const updatedTask = await task.save();
 
         res.json(updatedTask);
 
