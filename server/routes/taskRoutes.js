@@ -58,6 +58,44 @@ router.post("/", async (req, res) => {
 
 });
 
+// =============================
+// UPDATE TASK
+// =============================
+
+router.put("/:id", async (req, res) => {
+
+    try {
+
+        const updatedTask = await Task.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        if (!updatedTask) {
+            return res.status(404).json({
+                message: "Task not found"
+            });
+        }
+
+        res.json(updatedTask);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(400).json({
+            message: "Failed to update task",
+            error: error.message
+        });
+
+    }
+
+});
+
 
 // =============================
 // DELETE TASK

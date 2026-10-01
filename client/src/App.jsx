@@ -19,8 +19,23 @@ function App() {
     priority: "Medium"
   });
 
+  const [events, setEvents] = useState([]);
+const [showEventForm, setShowEventForm] = useState(false);
+
+const [newEvent, setNewEvent] = useState({
+    title: "",
+    subject: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    location: "",
+    type: "Lecture"
+});
+
+
   useEffect(() => {
   fetchTasks();
+  fetchEvents();
 }, []);
 
 const fetchTasks = async () => {
@@ -34,6 +49,21 @@ const fetchTasks = async () => {
   } catch (error) {
     console.error("Failed to fetch tasks:", error);
   }
+};
+
+const fetchEvents = async () => {
+    try {
+        const response = await axios.get(
+            "http://localhost:5000/api/events"
+        );
+
+        setEvents(response.data);
+
+    } catch (error) {
+
+        console.error("Failed to fetch events:", error);
+
+    }
 };
 
 
@@ -75,6 +105,57 @@ const handleAddTask = async (e) => {
   }
 };
 
+const handleAddEvent = async (e) => {
+    e.preventDefault();
+
+    if (
+        !newEvent.title ||
+        !newEvent.date ||
+        !newEvent.startTime ||
+        !newEvent.endTime
+    ) {
+        alert(
+            "Please enter a title, date, start time and end time."
+        );
+        return;
+    }
+
+    try {
+
+        const response = await axios.post(
+            "http://localhost:5000/api/events",
+            newEvent
+        );
+
+        setEvents((currentEvents) => [
+            ...currentEvents,
+            response.data
+        ]);
+
+        setNewEvent({
+            title: "",
+            subject: "",
+            date: "",
+            startTime: "",
+            endTime: "",
+            location: "",
+            type: "Lecture"
+        });
+
+        setShowEventForm(false);
+
+    } catch (error) {
+
+        console.error(
+            "Failed to create event:",
+            error
+        );
+
+        alert("Failed to save event.");
+
+    }
+};
+
   // -----------------------------
   // DELETE TASK
   // -----------------------------
@@ -95,22 +176,29 @@ const handleAddTask = async (e) => {
 };
 
 
-  // -----------------------------
-  // MARK TASK COMPLETE
-  // -----------------------------
+// -----------------------------
+// MARK TASK COMPLETE
+// -----------------------------
 
-  const handleCompleteTask = (id) => {
-
-    setTasks(
-      tasks.map((task) =>
-        task.id === id
-          ? { ...task, completed: !task.completed }
-          : task
-      )
+const handleCompleteTask = async (id, completed) => {
+  try {
+    const response = await axios.put(
+      `http://localhost:5000/api/tasks/${id}`,
+      {
+        completed: !completed
+      }
     );
 
-  };
-
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task._id === id ? response.data : task
+      )
+    );
+  } catch (error) {
+    console.error("Failed to update task:", error);
+    alert("Failed to update task.");
+  }
+};
 
   return (
     <div className="app">
@@ -342,7 +430,9 @@ const handleAddTask = async (e) => {
 
                   <button
                     className="complete-button"
-                    onClick={() => handleCompleteTask(task.id)}
+                    onClick={() =>
+                      handleCompleteTask(task._id, task.completed)
+                    }
                   >
                     {task.completed ? "✓" : ""}
                   </button>
@@ -530,7 +620,9 @@ const handleAddTask = async (e) => {
 
             {/* ADD EVENT */}
 
-            <button className="action-card">
+            <button className="action-card"
+            onClick={() => setShowEventForm(true)}
+            >
 
               <div className="action-icon">
                 📅
@@ -755,6 +847,193 @@ const handleAddTask = async (e) => {
         </div>
 
       )}
+
+      {showEventForm && (
+    <div className="modal-overlay">
+
+        <div className="task-modal">
+
+            <div className="modal-header">
+
+                <div>
+                    <h2>Add Event</h2>
+                    <p>Create a new schedule event</p>
+                </div>
+
+                <button
+                    type="button"
+                    className="close-button"
+                    onClick={() => setShowEventForm(false)}
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <form onSubmit={handleAddEvent}>
+
+                <div className="form-group">
+                    <label>Event Title</label>
+
+                    <input
+                        type="text"
+                        placeholder="e.g. Data Structures Lecture"
+                        value={newEvent.title}
+                        onChange={(e) =>
+                            setNewEvent({
+                                ...newEvent,
+                                title: e.target.value
+                            })
+                        }
+                    />
+                </div>
+
+
+                <div className="form-group">
+                    <label>Subject / Category</label>
+
+                    <input
+                        type="text"
+                        placeholder="e.g. Data Structures"
+                        value={newEvent.subject}
+                        onChange={(e) =>
+                            setNewEvent({
+                                ...newEvent,
+                                subject: e.target.value
+                            })
+                        }
+                    />
+                </div>
+
+
+                <div className="form-group">
+                    <label>Date</label>
+
+                    <input
+                        type="date"
+                        value={newEvent.date}
+                        onChange={(e) =>
+                            setNewEvent({
+                                ...newEvent,
+                                date: e.target.value
+                            })
+                        }
+                    />
+                </div>
+
+
+                <div className="form-group">
+                    <label>Start Time</label>
+
+                    <input
+                        type="time"
+                        value={newEvent.startTime}
+                        onChange={(e) =>
+                            setNewEvent({
+                                ...newEvent,
+                                startTime: e.target.value
+                            })
+                        }
+                    />
+                </div>
+
+
+                <div className="form-group">
+                    <label>End Time</label>
+
+                    <input
+                        type="time"
+                        value={newEvent.endTime}
+                        onChange={(e) =>
+                            setNewEvent({
+                                ...newEvent,
+                                endTime: e.target.value
+                            })
+                        }
+                    />
+                </div>
+
+
+                <div className="form-group">
+                    <label>Location</label>
+
+                    <input
+                        type="text"
+                        placeholder="e.g. Engineering Faculty"
+                        value={newEvent.location}
+                        onChange={(e) =>
+                            setNewEvent({
+                                ...newEvent,
+                                location: e.target.value
+                            })
+                        }
+                    />
+                </div>
+
+
+                <div className="form-group">
+                    <label>Event Type</label>
+
+                    <select
+                        value={newEvent.type}
+                        onChange={(e) =>
+                            setNewEvent({
+                                ...newEvent,
+                                type: e.target.value
+                            })
+                        }
+                    >
+                        <option value="Lecture">
+                            Lecture
+                        </option>
+
+                        <option value="Study Session">
+                            Study Session
+                        </option>
+
+                        <option value="Lab">
+                            Lab
+                        </option>
+
+                        <option value="Meeting">
+                            Meeting
+                        </option>
+
+                        <option value="Other">
+                            Other
+                        </option>
+                    </select>
+                </div>
+
+
+                <div className="modal-actions">
+
+                    <button
+                        type="button"
+                        className="cancel-button"
+                        onClick={() =>
+                            setShowEventForm(false)
+                        }
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        className="save-button"
+                    >
+                        Add Event
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+)}
 
     </div>
   );

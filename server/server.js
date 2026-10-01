@@ -5,6 +5,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const taskRoutes = require("./routes/taskRoutes");
+const eventRoutes = require("./routes/eventRoutes");
 
 const app = express();
 
@@ -37,6 +38,8 @@ app.get("/", (req, res) => {
 // Task routes
 app.use("/api/tasks", taskRoutes);
 
+// Event routes
+app.use("/api/events", eventRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;
