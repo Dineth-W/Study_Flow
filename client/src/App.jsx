@@ -20,7 +20,9 @@ function App() {
   });
 
   const [events, setEvents] = useState([]);
-const [showEventForm, setShowEventForm] = useState(false);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [currentView, setCurrentView] = useState("dashboard");
+  const [selectedDate, setSelectedDate] = useState(null);
 
 const [newEvent, setNewEvent] = useState({
     title: "",
@@ -157,6 +159,43 @@ const handleAddEvent = async (e) => {
 };
 
   // -----------------------------
+  // CALENDAR HELPERS
+  // -----------------------------
+
+const formatDateKey = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+};
+
+
+const formatDisplayDate = (dateString) => {
+    const date = new Date(`${dateString}T00:00:00`);
+
+    return date.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    });
+};
+
+
+const formatTime = (time) => {
+    const [hours, minutes] = time.split(":");
+
+    const date = new Date();
+    date.setHours(Number(hours));
+    date.setMinutes(Number(minutes));
+
+    return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit"
+    });
+};
+  // -----------------------------
   // DELETE TASK
   // -----------------------------
 
@@ -217,15 +256,25 @@ const handleCompleteTask = async (id, completed) => {
 
         <nav className="navigation">
 
-          <a href="#" className="nav-item active">
-            <span>🏠</span>
-            Dashboard
-          </a>
+          <button
+    className={`nav-item ${
+        currentView === "dashboard" ? "active" : ""
+    }`}
+    onClick={() => setCurrentView("dashboard")}
+>
+    <span>🏠</span>
+    Dashboard
+    </button>
 
-          <a href="#" className="nav-item">
-            <span>📅</span>
-            Calendar
-          </a>
+          <button
+          className={`nav-item ${
+              currentView === "calendar" ? "active" : ""
+          }`}
+          onClick={() => setCurrentView("calendar")}
+      >
+          <span>📅</span>
+          Calendar
+      </button>
 
           <a href="#" className="nav-item">
             <span>📊</span>
@@ -258,6 +307,9 @@ const handleCompleteTask = async (id, completed) => {
 
       <main className="main-content">
 
+    {currentView === "dashboard" ? (
+        <>
+        
         {/* HEADER */}
 
         <header className="header">
@@ -668,10 +720,196 @@ const handleCompleteTask = async (id, completed) => {
 
           </div>
 
+                </section>
+
+        </>
+
+
+    ) : (
+
+        <section className="section">
+
+            <div className="section-title">
+
+                <div>
+                    <h2>Calendar</h2>
+
+                    <p>
+                        Your schedule and upcoming events
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div className="calendar-card">
+
+                <div className="calendar-placeholder">
+
+                    <h3>Your Events</h3>
+
+                    {events.length === 0 ? (
+
+                        <p>
+                            No events scheduled yet.
+                        </p>
+
+                    ) : (
+
+                        <div className="calendar-event-list">
+
+                            {events
+                                .slice()
+                                .sort(
+                                    (a, b) =>
+                                        new Date(a.date) -
+                                        new Date(b.date)
+                                )
+                                .map((event) => (
+
+                                    <button
+                                        key={event._id}
+                                        className="calendar-event"
+                                        onClick={() =>
+                                            setSelectedDate(
+                                                event.date.slice(0, 10)
+                                            )
+                                        }
+                                    >
+
+                                        <div className="calendar-event-date">
+
+                                            {new Date(
+                                                `${event.date.slice(0, 10)}T00:00:00`
+                                            ).toLocaleDateString(
+                                                "en-US",
+                                                {
+                                                    month: "short",
+                                                    day: "numeric"
+                                                }
+                                            )}
+
+                                        </div>
+
+                                        <div className="calendar-event-info">
+
+                                            <strong>
+                                                {event.title}
+                                            </strong>
+
+                                            <span>
+                                                {formatTime(
+                                                    event.startTime
+                                                )}
+                                                {" - "}
+                                                {formatTime(
+                                                    event.endTime
+                                                )}
+                                            </span>
+
+                                        </div>
+
+                                    </button>
+
+                                ))}
+
+                        </div>
+
+                    )}
+
+                </div>
+
+
+                {selectedDate && (
+
+                    <div className="event-details">
+
+                        <div className="event-details-header">
+
+                            <h3>
+                                {formatDisplayDate(selectedDate)}
+                            </h3>
+
+                            <button
+                                onClick={() =>
+                                    setSelectedDate(null)
+                                }
+                            >
+                                Close
+                            </button>
+
+                        </div>
+
+
+                        {events
+                            .filter(
+                                (event) =>
+                                    event.date.slice(0, 10) ===
+                                    selectedDate
+                            )
+                            .map((event) => (
+
+                                <div
+                                    className="event-detail-card"
+                                    key={event._id}
+                                >
+
+                                    <h3>
+                                        {event.title}
+                                    </h3>
+
+                                    <p>
+                                        <strong>
+                                            Subject:
+                                        </strong>{" "}
+                                        {event.subject ||
+                                            "Not specified"}
+                                    </p>
+
+                                    <p>
+                                        <strong>
+                                            Time:
+                                        </strong>{" "}
+                                        {formatTime(
+                                            event.startTime
+                                        )}
+                                        {" - "}
+                                        {formatTime(
+                                            event.endTime
+                                        )}
+                                    </p>
+
+                                    <p>
+                                        <strong>
+                                            Location:
+                                        </strong>{" "}
+                                        {event.location ||
+                                            "Not specified"}
+                                    </p>
+
+                                    <p>
+                                        <strong>
+                                            Type:
+                                        </strong>{" "}
+                                        {event.type}
+                                    </p>
+
+                                </div>
+
+                            ))}
+
+                    </div>
+
+                )}
+
+            </div>
+
         </section>
 
-      </main>
 
+    )}
+
+      </main>
 
       {/* =========================
           ADD TASK MODAL

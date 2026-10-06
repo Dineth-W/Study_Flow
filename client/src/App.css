@@ -721,3 +721,93 @@ button {
   background: #4338ca;
 }
 
+/* =========================
+   CALENDAR
+========================= */
+
+.calendar-card {
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+}
+
+.calendar-placeholder h3 {
+  margin-top: 0;
+}
+
+.calendar-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.calendar-event {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.calendar-event:hover {
+  background: #f8fafc;
+}
+
+.calendar-event-date {
+  min-width: 70px;
+  font-weight: bold;
+}
+
+.calendar-event-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calendar-event-info span {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.event-details {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.event-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.event-details-header button {
+  border: none;
+  background: #f1f5f9;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.event-detail-card {
+  margin-top: 15px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.event-detail-card h3 {
+  margin-top: 0;
+}
+
+.event-detail-card p {
+  margin: 8px 0;
+}
