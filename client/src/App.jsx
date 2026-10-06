@@ -23,6 +23,7 @@ function App() {
   const [showEventForm, setShowEventForm] = useState(false);
   const [currentView, setCurrentView] = useState("dashboard");
   const [selectedDate, setSelectedDate] = useState(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
 const [newEvent, setNewEvent] = useState({
     title: "",
@@ -158,9 +159,9 @@ const handleAddEvent = async (e) => {
     }
 };
 
-  // -----------------------------
-  // CALENDAR HELPERS
-  // -----------------------------
+// -----------------------------
+// CALENDAR HELPERS
+// -----------------------------
 
 const formatDateKey = (date) => {
     const year = date.getFullYear();
@@ -169,7 +170,6 @@ const formatDateKey = (date) => {
 
     return `${year}-${month}-${day}`;
 };
-
 
 const formatDisplayDate = (dateString) => {
     const date = new Date(`${dateString}T00:00:00`);
@@ -182,7 +182,6 @@ const formatDisplayDate = (dateString) => {
     });
 };
 
-
 const formatTime = (time) => {
     const [hours, minutes] = time.split(":");
 
@@ -194,6 +193,74 @@ const formatTime = (time) => {
         hour: "numeric",
         minute: "2-digit"
     });
+};
+
+const getCalendarDays = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    const days = [];
+
+    // Empty cells before the first day
+    for (let i = 0; i < firstDay.getDay(); i++) {
+        days.push(null);
+    }
+
+    // Actual days
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+        days.push(new Date(year, month, day));
+    }
+
+    return days;
+};
+
+const getEventsForDate = (date) => {
+    if (!date) {
+        return [];
+    }
+
+    const dateKey = formatDateKey(date);
+
+    return events.filter(
+        (event) => event.date.slice(0, 10) === dateKey
+    );
+};
+
+const goToPreviousMonth = () => {
+    setCurrentMonth(
+        new Date(
+            currentMonth.getFullYear(),
+            currentMonth.getMonth() - 1,
+            1
+        )
+    );
+};
+
+const goToNextMonth = () => {
+    setCurrentMonth(
+        new Date(
+            currentMonth.getFullYear(),
+            currentMonth.getMonth() + 1,
+            1
+        )
+    );
+};
+
+const goToToday = () => {
+    const today = new Date();
+
+    setCurrentMonth(
+        new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            1
+        )
+    );
+
+    setSelectedDate(formatDateKey(today));
 };
   // -----------------------------
   // DELETE TASK
@@ -276,17 +343,7 @@ const handleCompleteTask = async (id, completed) => {
           Calendar
       </button>
 
-          <a href="#" className="nav-item">
-            <span>📊</span>
-            Assessments
-          </a>
-
-          <a href="#" className="nav-item">
-            <span>📚</span>
-            Resources
-          </a>
-
-        </nav>
+    </nav>
 
 
         <div className="sidebar-bottom">
@@ -342,104 +399,100 @@ const handleCompleteTask = async (id, completed) => {
         </header>
 
 
-        {/* =========================
-            URGENT & UPCOMING
-        ========================= */}
+{/* =========================
+    URGENT & UPCOMING
+========================= */}
 
-        <section className="section">
+<section className="section">
 
-          <div className="section-title">
+    <div className="section-title">
 
-            <h2>
-              Urgent & Upcoming
-            </h2>
+        <h2>
+            Urgent & Upcoming
+        </h2>
 
-            <button className="view-all">
-              View all
-            </button>
+    </div>
 
-          </div>
+    <div className="urgent-container">
 
+        {tasks
+            .filter((task) => !task.completed)
+            .sort(
+                (a, b) =>
+                    new Date(a.dueDate) -
+                    new Date(b.dueDate)
+            )
+            .slice(0, 3)
+            .map((task) => {
 
-          <div className="urgent-container">
+                const today = new Date();
+                const dueDate = new Date(task.dueDate);
 
-            <div className="urgent-card urgent">
+                const difference =
+                    Math.ceil(
+                        (dueDate - today) /
+                        (1000 * 60 * 60 * 24)
+                    );
 
-              <div className="card-icon">
-                ⚠️
-              </div>
+                let dueText;
 
-              <div>
+                if (difference < 0) {
+                    dueText = "Overdue";
+                } else if (difference === 0) {
+                    dueText = "Due today";
+                } else if (difference === 1) {
+                    dueText = "Due tomorrow";
+                } else {
+                    dueText = `Due in ${difference} days`;
+                }
 
-                <span className="card-label">
-                  URGENT
-                </span>
+                return (
+                    <div
+                        className={`urgent-card ${
+                            difference <= 1
+                                ? "urgent"
+                                : "upcoming"
+                        }`}
+                        key={task._id}
+                    >
 
-                <h3>
-                  DSA Assignment
-                </h3>
+                        <div className="card-icon">
+                            {difference <= 1 ? "⚠️" : "📅"}
+                        </div>
 
-                <p>
-                  Due tomorrow
-                </p>
+                        <div>
 
-              </div>
+                            <span className="card-label">
+                                {difference <= 1
+                                    ? "URGENT"
+                                    : "UPCOMING"}
+                            </span>
 
+                            <h3>
+                                {task.title}
+                            </h3>
+
+                            <p>
+                                {dueText}
+                            </p>
+
+                        </div>
+
+                    </div>
+                );
+            })}
+
+        {tasks.filter((task) => !task.completed).length === 0 && (
+
+            <div className="empty-task">
+                No upcoming tasks.
             </div>
 
+        )}
 
-            <div className="urgent-card upcoming">
+    </div>
 
-              <div className="card-icon">
-                📅
-              </div>
-
-              <div>
-
-                <span className="card-label">
-                  UPCOMING
-                </span>
-
-                <h3>
-                  Signals & Systems Exam
-                </h3>
-
-                <p>
-                  In 5 days
-                </p>
-
-              </div>
-
-            </div>
-
-
-            <div className="urgent-card upcoming">
-
-              <div className="card-icon">
-                📝
-              </div>
-
-              <div>
-
-                <span className="card-label">
-                  UPCOMING
-                </span>
-
-                <h3>
-                  Electronics Lab Report
-                </h3>
-
-                <p>
-                  In 7 days
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </section>
+</section>
 
 
         {/* =========================
@@ -529,101 +582,90 @@ const handleCompleteTask = async (id, completed) => {
         </section>
 
 
-        {/* =========================
-            TODAY'S SCHEDULE
-        ========================= */}
+{/* =========================
+    TODAY'S SCHEDULE
+========================= */}
 
-        <section className="section">
+<section className="section">
 
-          <div className="section-title">
+    <div className="section-title">
 
-            <h2>
-              Today's Schedule
-            </h2>
+        <h2>
+            Today's Schedule
+        </h2>
 
-            <button className="view-all">
-              View calendar →
-            </button>
+        <button
+            className="view-all"
+            onClick={() => setCurrentView("calendar")}
+        >
+            View calendar →
+        </button>
 
-          </div>
+    </div>
 
+    <div className="schedule-card">
 
-          <div className="schedule-card">
+        {events
+            .filter((event) => {
+                const today = new Date();
+                const todayKey = formatDateKey(today);
 
-            <div className="schedule-item">
+                return event.date.slice(0, 10) === todayKey;
+            })
+            .sort(
+                (a, b) =>
+                    a.startTime.localeCompare(b.startTime)
+            )
+            .map((event) => (
 
-              <div className="time">
-                09:00
-                <span>AM</span>
-              </div>
+                <div
+                    className="schedule-item"
+                    key={event._id}
+                >
 
-              <div className="schedule-line"></div>
+                    <div className="time">
 
-              <div className="schedule-info">
+                        {formatTime(event.startTime)}
 
-                <h3>
-                  Data Structures & Algorithms
-                </h3>
+                    </div>
 
-                <p>
-                  Lecture • Engineering Faculty
-                </p>
+                    <div className="schedule-line"></div>
 
-              </div>
+                    <div className="schedule-info">
 
+                        <h3>
+                            {event.title}
+                        </h3>
+
+                        <p>
+                            {event.type}
+                            {event.location
+                                ? ` • ${event.location}`
+                                : ""}
+                        </p>
+
+                    </div>
+
+                </div>
+
+            ))}
+
+        {events.filter((event) => {
+            const today = new Date();
+            const todayKey = formatDateKey(today);
+
+            return event.date.slice(0, 10) === todayKey;
+        }).length === 0 && (
+
+            <div className="empty-task">
+                No events scheduled for today.
             </div>
 
+        )}
 
-            <div className="schedule-item">
+    </div>
 
-              <div className="time">
-                11:00
-                <span>AM</span>
-              </div>
-
-              <div className="schedule-line"></div>
-
-              <div className="schedule-info">
-
-                <h3>
-                  Study - Algorithms
-                </h3>
-
-                <p>
-                  Study Session • Library
-                </p>
-
-              </div>
-
-            </div>
-
-
-            <div className="schedule-item">
-
-              <div className="time">
-                02:00
-                <span>PM</span>
-              </div>
-
-              <div className="schedule-line"></div>
-
-              <div className="schedule-info">
-
-                <h3>
-                  Analog Electronics
-                </h3>
-
-                <p>
-                  Lecture • Engineering Faculty
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </section>
+</section>
 
 
         {/* =========================
@@ -694,30 +736,6 @@ const handleCompleteTask = async (id, completed) => {
 
             </button>
 
-
-            {/* ADD ASSESSMENT */}
-
-            <button className="action-card">
-
-              <div className="action-icon">
-                📊
-              </div>
-
-              <div>
-
-                <h3>
-                  Add Assessment
-                </h3>
-
-                <p>
-                  Record an exam or grade
-                </p>
-
-              </div>
-
-            </button>
-
-
           </div>
 
                 </section>
@@ -727,184 +745,255 @@ const handleCompleteTask = async (id, completed) => {
 
     ) : (
 
-        <section className="section">
+        <section className="section calendar-section">
 
-            <div className="section-title">
+          <div className="section-title">
 
-                <div>
-                    <h2>Calendar</h2>
+              <div>
+                  <h2>Calendar</h2>
 
-                    <p>
-                        Your schedule and upcoming events
-                    </p>
-                </div>
+                  <p>
+                      Your schedule and upcoming events
+                  </p>
+              </div>
 
-            </div>
-
-
-            <div className="calendar-card">
-
-                <div className="calendar-placeholder">
-
-                    <h3>Your Events</h3>
-
-                    {events.length === 0 ? (
-
-                        <p>
-                            No events scheduled yet.
-                        </p>
-
-                    ) : (
-
-                        <div className="calendar-event-list">
-
-                            {events
-                                .slice()
-                                .sort(
-                                    (a, b) =>
-                                        new Date(a.date) -
-                                        new Date(b.date)
-                                )
-                                .map((event) => (
-
-                                    <button
-                                        key={event._id}
-                                        className="calendar-event"
-                                        onClick={() =>
-                                            setSelectedDate(
-                                                event.date.slice(0, 10)
-                                            )
-                                        }
-                                    >
-
-                                        <div className="calendar-event-date">
-
-                                            {new Date(
-                                                `${event.date.slice(0, 10)}T00:00:00`
-                                            ).toLocaleDateString(
-                                                "en-US",
-                                                {
-                                                    month: "short",
-                                                    day: "numeric"
-                                                }
-                                            )}
-
-                                        </div>
-
-                                        <div className="calendar-event-info">
-
-                                            <strong>
-                                                {event.title}
-                                            </strong>
-
-                                            <span>
-                                                {formatTime(
-                                                    event.startTime
-                                                )}
-                                                {" - "}
-                                                {formatTime(
-                                                    event.endTime
-                                                )}
-                                            </span>
-
-                                        </div>
-
-                                    </button>
-
-                                ))}
-
-                        </div>
-
-                    )}
-
-                </div>
+          </div>
 
 
-                {selectedDate && (
+    <div className="calendar-card">
 
-                    <div className="event-details">
+        {/* CALENDAR HEADER */}
 
-                        <div className="event-details-header">
+        <div className="calendar-header">
 
-                            <h3>
-                                {formatDisplayDate(selectedDate)}
-                            </h3>
+            <button
+                className="calendar-nav-button"
+                onClick={goToPreviousMonth}
+            >
+                ←
+            </button>
 
-                            <button
-                                onClick={() =>
-                                    setSelectedDate(null)
-                                }
-                            >
-                                Close
-                            </button>
+            <h2>
+                {currentMonth.toLocaleDateString(
+                    "en-US",
+                    {
+                        month: "long",
+                        year: "numeric"
+                    }
+                )}
+            </h2>
 
-                        </div>
+            <button
+                className="calendar-nav-button"
+                onClick={goToNextMonth}
+            >
+                →
+            </button>
+
+        </div>
 
 
-                        {events
-                            .filter(
-                                (event) =>
-                                    event.date.slice(0, 10) ===
-                                    selectedDate
-                            )
-                            .map((event) => (
+        <button
+            className="calendar-today-button"
+            onClick={goToToday}
+        >
+            Today
+        </button>
+
+
+        {/* WEEK DAYS */}
+
+        <div className="calendar-weekdays">
+
+            <div>Sun</div>
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+
+        </div>
+
+
+        {/* CALENDAR DAYS */}
+
+        <div className="calendar-grid">
+
+            {getCalendarDays().map((date, index) => {
+
+                if (!date) {
+                    return (
+                        <div
+                            className="calendar-day empty"
+                            key={`empty-${index}`}
+                        ></div>
+                    );
+                }
+
+                const dateKey = formatDateKey(date);
+
+                const dayEvents =
+                    getEventsForDate(date);
+
+                const todayKey =
+                    formatDateKey(new Date());
+
+                const isToday =
+                    dateKey === todayKey;
+
+                const isSelected =
+                    selectedDate === dateKey;
+
+                return (
+
+                    <button
+                        className={`calendar-day ${
+                            isToday ? "today" : ""
+                        } ${
+                            isSelected ? "selected" : ""
+                        }`}
+                        key={dateKey}
+                        onClick={() =>
+                            setSelectedDate(dateKey)
+                        }
+                    >
+
+                        <span className="calendar-day-number">
+                            {date.getDate()}
+                        </span>
+
+
+                        <div className="calendar-day-events">
+
+                            {dayEvents.map((event) => (
 
                                 <div
-                                    className="event-detail-card"
+                                    className="calendar-event-title"
                                     key={event._id}
                                 >
-
-                                    <h3>
-                                        {event.title}
-                                    </h3>
-
-                                    <p>
-                                        <strong>
-                                            Subject:
-                                        </strong>{" "}
-                                        {event.subject ||
-                                            "Not specified"}
-                                    </p>
-
-                                    <p>
-                                        <strong>
-                                            Time:
-                                        </strong>{" "}
-                                        {formatTime(
-                                            event.startTime
-                                        )}
-                                        {" - "}
-                                        {formatTime(
-                                            event.endTime
-                                        )}
-                                    </p>
-
-                                    <p>
-                                        <strong>
-                                            Location:
-                                        </strong>{" "}
-                                        {event.location ||
-                                            "Not specified"}
-                                    </p>
-
-                                    <p>
-                                        <strong>
-                                            Type:
-                                        </strong>{" "}
-                                        {event.type}
-                                    </p>
-
+                                    {event.title}
                                 </div>
 
                             ))}
 
-                    </div>
+                        </div>
+
+                    </button>
+
+                );
+            })}
+
+        </div>
+
+
+        {/* SELECTED DATE DETAILS */}
+
+        {selectedDate && (
+
+            <div className="event-details">
+
+                <div className="event-details-header">
+
+                    <h3>
+                        {formatDisplayDate(selectedDate)}
+                    </h3>
+
+                    <button
+                        onClick={() =>
+                            setSelectedDate(null)
+                        }
+                    >
+                        Close
+                    </button>
+
+                </div>
+
+
+                {events.filter(
+                    (event) =>
+                        event.date.slice(0, 10) ===
+                        selectedDate
+                ).length === 0 ? (
+
+                    <p>
+                        No events scheduled for this date.
+                    </p>
+
+                ) : (
+
+                    events
+                        .filter(
+                            (event) =>
+                                event.date.slice(0, 10) ===
+                                selectedDate
+                        )
+                        .sort(
+                            (a, b) =>
+                                a.startTime.localeCompare(
+                                    b.startTime
+                                )
+                        )
+                        .map((event) => (
+
+                            <div
+                                className="event-detail-card"
+                                key={event._id}
+                            >
+
+                                <h3>
+                                    {event.title}
+                                </h3>
+
+                                <p>
+                                    <strong>
+                                        Subject:
+                                    </strong>{" "}
+                                    {event.subject ||
+                                        "Not specified"}
+                                </p>
+
+                                <p>
+                                    <strong>
+                                        Time:
+                                    </strong>{" "}
+                                    {formatTime(
+                                        event.startTime
+                                    )}
+                                    {" - "}
+                                    {formatTime(
+                                        event.endTime
+                                    )}
+                                </p>
+
+                                <p>
+                                    <strong>
+                                        Location:
+                                    </strong>{" "}
+                                    {event.location ||
+                                        "Not specified"}
+                                </p>
+
+                                <p>
+                                    <strong>
+                                        Type:
+                                    </strong>{" "}
+                                    {event.type}
+                                </p>
+
+                            </div>
+
+                        ))
 
                 )}
 
             </div>
 
-        </section>
+        )}
+
+    </div>
+
+</section>
 
 
     )}
