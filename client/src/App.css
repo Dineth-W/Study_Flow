@@ -968,3 +968,86 @@ button {
 .event-detail-card p {
     margin: 8px 0;
 }
+
+/* =========================
+   USER ACCOUNT MENU
+========================= */
+
+.profile {
+    position: relative;
+}
+
+.avatar {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.account-menu {
+    position: absolute;
+    top: 55px;
+    right: 0;
+    width: 260px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    z-index: 100;
+}
+
+.account-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.account-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.account-info div:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.account-info strong {
+    font-size: 15px;
+}
+
+.account-info span {
+    font-size: 13px;
+    color: #6b7280;
+    word-break: break-word;
+}
+
+.account-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 15px 0;
+}
+
+.logout-button {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 10px;
+    text-align: left;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.logout-button:hover {
+    background: #f8fafc;
+}

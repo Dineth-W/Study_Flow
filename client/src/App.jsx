@@ -23,6 +23,13 @@ function App() {
   const [showEventForm, setShowEventForm] = useState(false);
   const [currentView, setCurrentView] = useState("dashboard");
   const [selectedDate, setSelectedDate] = useState(null);
+
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const user = {
+    name: "Student",
+    email: "student@example.com"
+  };
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
 const [newEvent, setNewEvent] = useState({
@@ -386,15 +393,58 @@ const handleCompleteTask = async (id, completed) => {
 
           <div className="profile">
 
-            <div className="notification">
-              🔔
+    <button
+        className="avatar"
+        onClick={() =>
+            setShowAccountMenu(!showAccountMenu)
+        }
+    >
+        {user.name.charAt(0).toUpperCase()}
+    </button>
+
+    {showAccountMenu && (
+
+        <div className="account-menu">
+
+            <div className="account-info">
+
+                <div className="account-avatar">
+                    {user.name.charAt(0).toUpperCase()}
+                </div>
+
+                <div>
+
+                    <strong>
+                        {user.name}
+                    </strong>
+
+                    <span>
+                        {user.email}
+                    </span>
+
+                </div>
+
             </div>
 
-            <div className="avatar">
-              S
-            </div>
 
-          </div>
+            <div className="account-divider"></div>
+
+
+            <button
+                className="logout-button"
+                onClick={() => {
+                    setShowAccountMenu(false);
+                    alert("Logged out.");
+                }}
+            >
+                🚪 Log out
+            </button>
+
+        </div>
+
+    )}
+
+</div>
 
         </header>
 
