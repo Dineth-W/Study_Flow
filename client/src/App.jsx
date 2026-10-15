@@ -11,6 +11,7 @@ function App() {
   const [tasks, setTasks] = useState([]);
 
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
 
   const [newTask, setNewTask] = useState({
     title: "",
@@ -21,6 +22,7 @@ function App() {
 
   const [events, setEvents] = useState([]);
   const [showEventForm, setShowEventForm] = useState(false);
+  const [editingEventId, setEditingEventId] = useState(null);
   const [currentView, setCurrentView] = useState("dashboard");
   const [selectedDate, setSelectedDate] = useState(null);
 
@@ -84,21 +86,34 @@ const fetchEvents = async () => {
 const handleAddTask = async (e) => {
   e.preventDefault();
 
-  if (!newTask.title || !newTask.dueDate) {
+  if (!newTask.title.trim() || !newTask.dueDate) {
     alert("Please enter a task title and due date.");
     return;
   }
 
   try {
-    const response = await axios.post(
-      "http://localhost:5000/api/tasks",
-      newTask
-    );
+    if (editingTaskId) {
+      const response = await axios.put(
+        `http://localhost:5000/api/tasks/${editingTaskId}`,
+        newTask
+      );
 
-    setTasks((currentTasks) => [
-      ...currentTasks,
-      response.data
-    ]);
+      setTasks((currentTasks) =>
+        currentTasks.map((task) =>
+          task._id === editingTaskId ? response.data : task
+        )
+      );
+    } else {
+      const response = await axios.post(
+        "http://localhost:5000/api/tasks",
+        newTask
+      );
+
+      setTasks((currentTasks) => [
+        ...currentTasks,
+        response.data
+      ]);
+    }
 
     setNewTask({
       title: "",
@@ -106,63 +121,142 @@ const handleAddTask = async (e) => {
       dueDate: "",
       priority: "Medium"
     });
-
+    setEditingTaskId(null);
     setShowTaskForm(false);
-
   } catch (error) {
-    console.error("Failed to create task:", error);
-    alert("Failed to save task.");
+    console.error("Failed to save task:", error);
+    alert(
+      error.response?.data?.message ||
+      "Failed to save task. Please check the details and try again."
+    );
   }
+};
+
+const handleEditTask = (task) => {
+  setEditingTaskId(task._id);
+  setNewTask({
+    title: task.title || "",
+    subject: task.subject || "",
+    dueDate: task.dueDate ? task.dueDate.slice(0, 10) : "",
+    priority: task.priority || "Medium"
+  });
+  setShowTaskForm(true);
+};
+
+const closeTaskForm = () => {
+  setShowTaskForm(false);
+  setEditingTaskId(null);
+  setNewTask({
+    title: "",
+    subject: "",
+    dueDate: "",
+    priority: "Medium"
+  });
+};
+
+const emptyEvent = {
+    title: "",
+    subject: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    location: "",
+    type: "Lecture"
+};
+
+const openNewEventForm = () => {
+    setEditingEventId(null);
+    setNewEvent({ ...emptyEvent });
+    setShowEventForm(true);
+};
+
+const handleEditEvent = (event) => {
+    setEditingEventId(event._id);
+    setNewEvent({
+        title: event.title || "",
+        subject: event.subject || "",
+        date: event.date ? event.date.slice(0, 10) : "",
+        startTime: event.startTime || "",
+        endTime: event.endTime || "",
+        location: event.location || "",
+        type: event.type || "Other"
+    });
+    setShowEventForm(true);
+};
+
+const closeEventForm = () => {
+    setShowEventForm(false);
+    setEditingEventId(null);
+    setNewEvent({ ...emptyEvent });
 };
 
 const handleAddEvent = async (e) => {
     e.preventDefault();
 
     if (
-        !newEvent.title ||
+        !newEvent.title.trim() ||
         !newEvent.date ||
         !newEvent.startTime ||
         !newEvent.endTime
     ) {
-        alert(
-            "Please enter a title, date, start time and end time."
-        );
+        alert("Please enter a title, date, start time and end time.");
+        return;
+    }
+
+    if (newEvent.endTime <= newEvent.startTime) {
+        alert("The end time must be later than the start time.");
         return;
     }
 
     try {
+        if (editingEventId) {
+            const response = await axios.put(
+                `http://localhost:5000/api/events/${editingEventId}`,
+                newEvent
+            );
 
-        const response = await axios.post(
-            "http://localhost:5000/api/events",
-            newEvent
-        );
+            setEvents((currentEvents) =>
+                currentEvents.map((event) =>
+                    event._id === editingEventId ? response.data : event
+                )
+            );
+            setSelectedDate(newEvent.date);
+        } else {
+            const response = await axios.post(
+                "http://localhost:5000/api/events",
+                newEvent
+            );
 
-        setEvents((currentEvents) => [
-            ...currentEvents,
-            response.data
-        ]);
+            setEvents((currentEvents) => [
+                ...currentEvents,
+                response.data
+            ]);
+            setSelectedDate(newEvent.date);
+        }
 
-        setNewEvent({
-            title: "",
-            subject: "",
-            date: "",
-            startTime: "",
-            endTime: "",
-            location: "",
-            type: "Lecture"
-        });
-
-        setShowEventForm(false);
-
+        closeEventForm();
     } catch (error) {
-
-        console.error(
-            "Failed to create event:",
-            error
+        console.error("Failed to save event:", error);
+        alert(
+            error.response?.data?.message ||
+            "Failed to save event. Please check the details and try again."
         );
+    }
+};
 
-        alert("Failed to save event.");
+const handleDeleteEvent = async (eventId) => {
+    if (!window.confirm("Delete this event? This cannot be undone.")) {
+        return;
+    }
 
+    try {
+        await axios.delete(`http://localhost:5000/api/events/${eventId}`);
+        setEvents((currentEvents) =>
+            currentEvents.filter((event) => event._id !== eventId)
+        );
+    } catch (error) {
+        console.error("Failed to delete event:", error);
+        alert(error.response?.data?.message || "Failed to delete event.");
     }
 };
 
@@ -615,6 +709,16 @@ const handleCompleteTask = async (id, completed) => {
 
 
                   <button
+                    type="button"
+                    className="edit-task"
+                    title="Edit task"
+                    aria-label={`Edit ${task.title}`}
+                    onClick={() => handleEditTask(task)}
+                  >
+                    ✏️
+                  </button>
+
+                  <button
                     className="delete-task"
                     onClick={() => handleDeleteTask(task._id)}
                   >
@@ -765,7 +869,7 @@ const handleCompleteTask = async (id, completed) => {
             {/* ADD EVENT */}
 
             <button className="action-card"
-            onClick={() => setShowEventForm(true)}
+            onClick={openNewEventForm}
             >
 
               <div className="action-icon">
@@ -1031,6 +1135,23 @@ const handleCompleteTask = async (id, completed) => {
                                     {event.type}
                                 </p>
 
+                                <div className="event-card-actions">
+                                    <button
+                                        type="button"
+                                        className="edit-event-button"
+                                        onClick={() => handleEditEvent(event)}
+                                    >
+                                        ✏️ Edit
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="delete-event-button"
+                                        onClick={() => handleDeleteEvent(event._id)}
+                                    >
+                                        🗑️ Delete
+                                    </button>
+                                </div>
+
                             </div>
 
                         ))
@@ -1058,7 +1179,7 @@ const handleCompleteTask = async (id, completed) => {
 
         <div
           className="modal-overlay"
-          onClick={() => setShowTaskForm(false)}
+          onClick={closeTaskForm}
         >
 
           <div
@@ -1071,18 +1192,20 @@ const handleCompleteTask = async (id, completed) => {
               <div>
 
                 <h2>
-                  Add New Task
+                  {editingTaskId ? "Edit Task" : "Add New Task"}
                 </h2>
 
                 <p>
-                  Create a task for your study plan.
+                  {editingTaskId
+                    ? "Update the details of this task."
+                    : "Create a task for your study plan."}
                 </p>
 
               </div>
 
               <button
                 className="close-button"
-                onClick={() => setShowTaskForm(false)}
+                onClick={closeTaskForm}
               >
                 ×
               </button>
@@ -1203,7 +1326,7 @@ const handleCompleteTask = async (id, completed) => {
                 <button
                   type="button"
                   className="cancel-button"
-                  onClick={() => setShowTaskForm(false)}
+                  onClick={closeTaskForm}
                 >
                   Cancel
                 </button>
@@ -1212,7 +1335,7 @@ const handleCompleteTask = async (id, completed) => {
                   type="submit"
                   className="save-button"
                 >
-                  Add Task
+                  {editingTaskId ? "Save Changes" : "Add Task"}
                 </button>
 
               </div>
@@ -1233,14 +1356,14 @@ const handleCompleteTask = async (id, completed) => {
             <div className="modal-header">
 
                 <div>
-                    <h2>Add Event</h2>
-                    <p>Create a new schedule event</p>
+                    <h2>{editingEventId ? "Edit Event" : "Add Event"}</h2>
+                    <p>{editingEventId ? "Update the event details" : "Create a new schedule event"}</p>
                 </div>
 
                 <button
                     type="button"
                     className="close-button"
-                    onClick={() => setShowEventForm(false)}
+                    onClick={closeEventForm}
                 >
                     ×
                 </button>
@@ -1400,7 +1523,7 @@ const handleCompleteTask = async (id, completed) => {
                         type="submit"
                         className="save-button"
                     >
-                        Add Event
+                        {editingEventId ? "Save Changes" : "Add Event"}
                     </button>
 
                 </div>

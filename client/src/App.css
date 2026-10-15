@@ -1051,3 +1051,55 @@ button {
 .logout-button:hover {
     background: #f8fafc;
 }
+
+/* Task editing action */
+.edit-task {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.edit-task:hover {
+  background: #eef2ff;
+}
+
+
+/* Calendar event edit/delete controls */
+.event-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.edit-event-button,
+.delete-event-button {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.edit-event-button {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.edit-event-button:hover {
+  background: #e0e7ff;
+}
+
+.delete-event-button {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.delete-event-button:hover {
+  background: #ffe4e6;
+}

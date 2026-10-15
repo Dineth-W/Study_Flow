@@ -60,6 +60,40 @@ router.post("/", async (req, res) => {
 
 
 // =============================
+// UPDATE EVENT
+// =============================
+
+router.put("/:id", async (req, res) => {
+    try {
+        const updatedEvent = await Event.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        if (!updatedEvent) {
+            return res.status(404).json({
+                message: "Event not found"
+            });
+        }
+
+        res.json(updatedEvent);
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(400).json({
+            message: "Failed to update event",
+            error: error.message
+        });
+    }
+});
+
+
+// =============================
 // DELETE EVENT
 // =============================
 
