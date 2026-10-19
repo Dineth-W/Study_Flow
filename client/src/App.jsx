@@ -27,10 +27,28 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(null);
 
   const [showAccountMenu, setShowAccountMenu] = useState(false);
-  const user = {
-    name: "Student",
-    email: "student@example.com"
-  };
+
+const [token, setToken] = useState(
+  () => localStorage.getItem("studyflow_token")
+);
+
+const [user, setUser] = useState(() => {
+  try {
+    const savedUser = localStorage.getItem("studyflow_user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    return null;
+  }
+});
+
+const [authMode, setAuthMode] = useState("login");
+const [authForm, setAuthForm] = useState({
+  name: "",
+  email: "",
+  password: ""
+});
+const [authError, setAuthError] = useState("");
+const [authLoading, setAuthLoading] = useState(false);
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -46,9 +64,23 @@ const [newEvent, setNewEvent] = useState({
 
 
   useEffect(() => {
+  if (token) {
+    axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+  } else {
+    delete axios.defaults.headers.common.Authorization;
+  }
+}, [token]);
+
+useEffect(() => {
+  if (!token || !user) {
+    setTasks([]);
+    setEvents([]);
+    return;
+  }
+
   fetchTasks();
   fetchEvents();
-}, []);
+}, [token, user]);
 
 const fetchTasks = async () => {
   try {
@@ -407,6 +439,201 @@ const handleCompleteTask = async (id, completed) => {
   }
 };
 
+    
+const handleAuthSubmit = async (e) => {
+  e.preventDefault();
+  setAuthError("");
+  setAuthLoading(true);
+
+  try {
+    const endpoint =
+      authMode === "login" ? "login" : "register";
+
+    const payload =
+      authMode === "login"
+        ? {
+            email: authForm.email,
+            password: authForm.password
+          }
+        : {
+            name: authForm.name,
+            email: authForm.email,
+            password: authForm.password
+          };
+
+    const response = await axios.post(
+      `http://localhost:5000/api/auth/${endpoint}`,
+      payload
+    );
+
+    const { token: newToken, user: loggedInUser } = response.data;
+
+    localStorage.setItem("studyflow_token", newToken);
+    localStorage.setItem(
+      "studyflow_user",
+      JSON.stringify(loggedInUser)
+    );
+
+    setToken(newToken);
+    setUser(loggedInUser);
+    setAuthForm({ name: "", email: "", password: "" });
+    setShowAccountMenu(false);
+  } catch (error) {
+    setAuthError(
+      error.response?.data?.message ||
+      "Authentication failed. Check that the server is running."
+    );
+  } finally {
+    setAuthLoading(false);
+  }
+};
+
+const handleLogout = () => {
+  localStorage.removeItem("studyflow_token");
+  localStorage.removeItem("studyflow_user");
+
+  delete axios.defaults.headers.common.Authorization;
+
+  setToken(null);
+  setUser(null);
+  setTasks([]);
+  setEvents([]);
+  setShowAccountMenu(false);
+  setCurrentView("dashboard");
+  setAuthForm({ name: "", email: "", password: "" });
+  setAuthError("");
+  setAuthMode("login");
+};
+
+    
+if (!token || !user) {
+  return (
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-logo">
+          <div className="logo-icon">S</div>
+          <span>StudyFlow</span>
+        </div>
+
+        <h1>
+          {authMode === "login"
+            ? "Welcome back!"
+            : "Create your account"}
+        </h1>
+
+        <p className="auth-subtitle">
+          {authMode === "login"
+            ? "Sign in to continue your study journey."
+            : "Start organizing your studies with StudyFlow."}
+        </p>
+
+        <form onSubmit={handleAuthSubmit}>
+          {authMode === "register" && (
+            <div className="form-group">
+              <label>Full name</label>
+              <input
+                type="text"
+                required
+                autoComplete="name"
+                placeholder="Enter your name"
+                value={authForm.name}
+                onChange={(e) =>
+                  setAuthForm({
+                    ...authForm,
+                    name: e.target.value
+                  })
+                }
+              />
+            </div>
+          )}
+
+          <div className="form-group">
+            <label>Email address</label>
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={authForm.email}
+              onChange={(e) =>
+                setAuthForm({
+                  ...authForm,
+                  email: e.target.value
+                })
+              }
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              autoComplete={
+                authMode === "login"
+                  ? "current-password"
+                  : "new-password"
+              }
+              placeholder="At least 6 characters"
+              value={authForm.password}
+              onChange={(e) =>
+                setAuthForm({
+                  ...authForm,
+                  password: e.target.value
+                })
+              }
+            />
+          </div>
+
+          {authError && (
+            <p className="auth-error" role="alert">
+              {authError}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="auth-submit"
+            disabled={authLoading}
+          >
+            {authLoading
+              ? "Please wait..."
+              : authMode === "login"
+                ? "Log in"
+                : "Create account"}
+          </button>
+        </form>
+
+        <p className="auth-switch">
+          {authMode === "login"
+            ? "Don't have an account?"
+            : "Already have an account?"}{" "}
+
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode(
+                authMode === "login" ? "register" : "login"
+              );
+              setAuthError("");
+              setAuthForm({
+                name: "",
+                email: "",
+                password: ""
+              });
+            }}
+          >
+            {authMode === "login"
+              ? "Sign up"
+              : "Log in"}
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+}
+
   return (
     <div className="app">
 
@@ -475,7 +702,7 @@ const handleCompleteTask = async (id, completed) => {
           <div>
 
             <h1>
-              Good morning, Student! 👋
+              Good morning, {user.name}! 👋
             </h1>
 
             <p>
@@ -525,14 +752,12 @@ const handleCompleteTask = async (id, completed) => {
 
 
             <button
+                type="button"
                 className="logout-button"
-                onClick={() => {
-                    setShowAccountMenu(false);
-                    alert("Logged out.");
-                }}
-            >
+                onClick={handleLogout}
+                >
                 🚪 Log out
-            </button>
+                </button>
 
         </div>
 

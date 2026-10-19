@@ -41,6 +41,9 @@ app.use("/api/tasks", taskRoutes);
 // Event routes
 app.use("/api/events", eventRoutes);
 
+// Authentication
+app.use("/api/auth", require("./routes/authRoutes"));
+
 // Start server
 const PORT = process.env.PORT || 5000;
 
