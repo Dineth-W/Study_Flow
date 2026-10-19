@@ -468,6 +468,19 @@ const handleAuthSubmit = async (e) => {
 
     const { token: newToken, user: loggedInUser } = response.data;
 
+      axios.defaults.headers.common.Authorization =
+          `Bearer ${newToken}`;
+
+      localStorage.setItem("studyflow_token", newToken);
+
+      localStorage.setItem(
+          "studyflow_user",
+          JSON.stringify(loggedInUser)
+      );
+
+      setToken(newToken);
+      setUser(loggedInUser);
+
     localStorage.setItem("studyflow_token", newToken);
     localStorage.setItem(
       "studyflow_user",
