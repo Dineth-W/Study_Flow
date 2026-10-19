@@ -1,131 +1,114 @@
-const express = require("express");
-const Event = require("../models/Event");
 
+const express = require("express");
 const router = express.Router();
 
+const Event = require("../models/Event");
+const authMiddleware = require("../middleware/authMiddleware");
 
-// =============================
-// GET ALL EVENTS
-// =============================
+// Every event request must be authenticated.
+router.use(authMiddleware);
 
+// GET: return only this user's calendar events
 router.get("/", async (req, res) => {
-
     try {
-
-        const events = await Event
-            .find()
-            .sort({ date: 1, startTime: 1 });
+        const events = await Event.find({
+            userId: req.userId
+        }).sort({ date: 1, startTime: 1 });
 
         res.json(events);
-
     } catch (error) {
-
-        console.error(error);
-
         res.status(500).json({
-            message: "Failed to fetch events"
+            message: "Failed to fetch events."
         });
-
     }
-
 });
 
-
-// =============================
-// CREATE EVENT
-// =============================
-
+// POST: create an event owned by the logged-in user
 router.post("/", async (req, res) => {
-
     try {
-
-        const event = new Event(req.body);
-
-        const savedEvent = await event.save();
-
-        res.status(201).json(savedEvent);
-
-    } catch (error) {
-
-        console.error(error);
-
-        res.status(400).json({
-            message: "Failed to create event",
-            error: error.message
+        const event = await Event.create({
+            title: req.body.title,
+            subject: req.body.subject,
+            date: req.body.date,
+            startTime: req.body.startTime,
+            endTime: req.body.endTime,
+            location: req.body.location,
+            type: req.body.type,
+            userId: req.userId
         });
 
+        res.status(201).json(event);
+    } catch (error) {
+        res.status(400).json({
+            message: error.message || "Failed to create event."
+        });
     }
-
 });
 
-
-// =============================
-// UPDATE EVENT
-// =============================
-
+// PUT: update only an event owned by this user
 router.put("/:id", async (req, res) => {
     try {
-        const updatedEvent = await Event.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
+        const allowedFields = [
+            "title",
+            "subject",
+            "date",
+            "startTime",
+            "endTime",
+            "location",
+            "type"
+        ];
+
+        const updates = {};
+
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updates[field] = req.body[field];
             }
+        }
+
+        const event = await Event.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                userId: req.userId
+            },
+            { $set: updates },
+            { new: true, runValidators: true }
         );
 
-        if (!updatedEvent) {
+        if (!event) {
             return res.status(404).json({
-                message: "Event not found"
+                message: "Event not found."
             });
         }
 
-        res.json(updatedEvent);
-
+        res.json(event);
     } catch (error) {
-        console.error(error);
-
         res.status(400).json({
-            message: "Failed to update event",
-            error: error.message
+            message: error.message || "Failed to update event."
         });
     }
 });
 
-
-// =============================
-// DELETE EVENT
-// =============================
-
+// DELETE: delete only an event owned by this user
 router.delete("/:id", async (req, res) => {
-
     try {
+        const event = await Event.findOneAndDelete({
+            _id: req.params.id,
+            userId: req.userId
+        });
 
-        const deletedEvent = await Event.findByIdAndDelete(
-            req.params.id
-        );
-
-        if (!deletedEvent) {
+        if (!event) {
             return res.status(404).json({
-                message: "Event not found"
+                message: "Event not found."
             });
         }
 
-        res.json({
-            message: "Event deleted successfully"
-        });
-
+        res.json({ message: "Event deleted successfully." });
     } catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-            message: "Failed to delete event"
+        res.status(400).json({
+            message: "Failed to delete event."
         });
-
     }
-
 });
-
 
 module.exports = router;

@@ -1,127 +1,108 @@
-const express = require("express");
-const Task = require("../models/Task");
 
+const express = require("express");
 const router = express.Router();
 
+const Task = require("../models/Task");
+const authMiddleware = require("../middleware/authMiddleware");
 
-// =============================
-// GET ALL TASKS
-// =============================
+// Every task request must be authenticated.
+router.use(authMiddleware);
 
+// GET: return only this user's tasks
 router.get("/", async (req, res) => {
-
     try {
-
-        const tasks = await Task
-            .find()
-            .sort({ dueDate: 1 });
+        const tasks = await Task.find({
+            userId: req.userId
+        }).sort({ createdAt: -1 });
 
         res.json(tasks);
-
     } catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-            message: "Failed to fetch tasks"
-        });
-
+        res.status(500).json({ message: "Failed to fetch tasks." });
     }
-
 });
 
-
-// =============================
-// CREATE TASK
-// =============================
-
+// POST: create a task owned by the logged-in user
 router.post("/", async (req, res) => {
-
     try {
-
-        const task = new Task(req.body);
-
-        const savedTask = await task.save();
-
-        res.status(201).json(savedTask);
-
-    } catch (error) {
-
-        console.error(error);
-
-        res.status(400).json({
-            message: "Failed to create task",
-            error: error.message
+        const task = await Task.create({
+            title: req.body.title,
+            description: req.body.description,
+            subject: req.body.subject,
+            dueDate: req.body.dueDate,
+            priority: req.body.priority,
+            completed: req.body.completed ?? false,
+            userId: req.userId
         });
 
+        res.status(201).json(task);
+    } catch (error) {
+        res.status(400).json({
+            message: error.message || "Failed to create task."
+        });
     }
-
 });
 
-// =============================
-// UPDATE TASK
-// =============================
-
+// PUT: update only a task owned by this user
 router.put("/:id", async (req, res) => {
-
     try {
+        const allowedFields = [
+            "title",
+            "description",
+            "subject",
+            "dueDate",
+            "priority",
+            "completed"
+        ];
 
-        const updatedTask = await Task.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
+        const updates = {};
+
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updates[field] = req.body[field];
             }
+        }
+
+        const task = await Task.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                userId: req.userId
+            },
+            { $set: updates },
+            { new: true, runValidators: true }
         );
 
-        if (!updatedTask) {
+        if (!task) {
             return res.status(404).json({
-                message: "Task not found"
+                message: "Task not found."
             });
         }
 
-        res.json(updatedTask);
-
+        res.json(task);
     } catch (error) {
-
-        console.error(error);
-
         res.status(400).json({
-            message: "Failed to update task",
-            error: error.message
+            message: error.message || "Failed to update task."
         });
-
     }
-
 });
 
-
-// =============================
-// DELETE TASK
-// =============================
-
+// DELETE: delete only a task owned by this user
 router.delete("/:id", async (req, res) => {
-
     try {
-
-        await Task.findByIdAndDelete(req.params.id);
-
-        res.json({
-            message: "Task deleted successfully"
+        const task = await Task.findOneAndDelete({
+            _id: req.params.id,
+            userId: req.userId
         });
 
+        if (!task) {
+            return res.status(404).json({
+                message: "Task not found."
+            });
+        }
+
+        res.json({ message: "Task deleted successfully." });
     } catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-            message: "Failed to delete task"
-        });
-
+        res.status(400).json({ message: "Failed to delete task." });
     }
-
 });
-
 
 module.exports = router;
