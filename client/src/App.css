@@ -13,14 +13,12 @@ button {
   font-family: inherit;
 }
 
-
 /*  MAIN APP */
 
 .app {
   display: flex;
   min-height: 100vh;
 }
-
 
 /* SIDEBAR */
 
@@ -61,7 +59,6 @@ button {
 
   font-weight: bold;
 }
-
 
 /* Navigation */
 
@@ -110,7 +107,6 @@ button {
   margin-top: auto;
 }
 
-
 /* MAIN CONTENT */
 
 .main-content {
@@ -120,7 +116,6 @@ button {
 
   max-width: 1500px;
 }
-
 
 /* =========================
    HEADER
@@ -149,6 +144,7 @@ button {
 }
 
 .profile {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 18px;
@@ -162,8 +158,10 @@ button {
 .avatar {
   width: 42px;
   height: 42px;
-
+  border: none;
   border-radius: 50%;
+  cursor: pointer;
+  font-family: inherit;
 
   display: flex;
   align-items: center;
@@ -174,7 +172,6 @@ button {
 
   font-weight: bold;
 }
-
 
 /* =========================
    SECTIONS
@@ -209,7 +206,6 @@ button {
 
   font-size: 13px;
 }
-
 
 /* =========================
    URGENT CARDS
@@ -273,7 +269,6 @@ button {
 
   color: #6b7280;
 }
-
 
 /* =========================
    SCHEDULE
@@ -346,7 +341,6 @@ button {
   color: #6b7280;
 }
 
-
 /* =========================
    QUICK ACTIONS
 ========================= */
@@ -418,7 +412,6 @@ button {
 
   color: #6b7280;
 }
-
 
 /* =========================
    RESPONSIVE
@@ -571,7 +564,6 @@ button {
 
   color: #6b7280;
 }
-
 
 /* =========================
    MODAL
@@ -788,6 +780,7 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 15px;
 }
 
 .event-details-header button {
@@ -816,13 +809,6 @@ button {
 /* =========================
    MONTHLY CALENDAR
 ========================= */
-
-.calendar-card {
-    background: white;
-    border-radius: 14px;
-    padding: 24px;
-    border: 1px solid #e5e7eb;
-}
 
 .calendar-header {
     display: flex;
@@ -933,56 +919,6 @@ button {
     text-overflow: ellipsis;
 }
 
-.event-details {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid #e5e7eb;
-}
-
-.event-details-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.event-details-header button {
-    border: none;
-    background: #f1f5f9;
-    padding: 8px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.event-detail-card {
-    margin-top: 15px;
-    padding: 18px;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-}
-
-.event-detail-card h3 {
-    margin-top: 0;
-}
-
-.event-detail-card p {
-    margin: 8px 0;
-}
-
-/* =========================
-   USER ACCOUNT MENU
-========================= */
-
-.profile {
-    position: relative;
-}
-
-.avatar {
-    border: none;
-    cursor: pointer;
-    font-family: inherit;
-}
-
 .account-menu {
     position: absolute;
     top: 55px;
@@ -1067,7 +1003,6 @@ button {
   background: #eef2ff;
 }
 
-
 /* Calendar event edit/delete controls */
 .event-card-actions {
   display: flex;
@@ -1103,7 +1038,6 @@ button {
 .delete-event-button:hover {
   background: #ffe4e6;
 }
-
 
 /* =========================
    AUTHENTICATION SCREENS

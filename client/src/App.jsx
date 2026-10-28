@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 
+const API_URL = "http://localhost:5000/api";
+const emptyTask = { title: "", subject: "", dueDate: "", priority: "Medium" };
+const emptyEvent = {
+  title: "", subject: "", date: "", startTime: "", endTime: "",
+  location: "", type: "Lecture"
+};
+const emptyAuthForm = { name: "", email: "", password: "" };
+
 function App() {
 
   // -----------------------------
@@ -13,12 +21,7 @@ function App() {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
 
-  const [newTask, setNewTask] = useState({
-    title: "",
-    subject: "",
-    dueDate: "",
-    priority: "Medium"
-  });
+  const [newTask, setNewTask] = useState({ ...emptyTask });
 
   const [events, setEvents] = useState([]);
   const [showEventForm, setShowEventForm] = useState(false);
@@ -42,26 +45,13 @@ const [user, setUser] = useState(() => {
 });
 
 const [authMode, setAuthMode] = useState("login");
-const [authForm, setAuthForm] = useState({
-  name: "",
-  email: "",
-  password: ""
-});
+const [authForm, setAuthForm] = useState({ ...emptyAuthForm });
 const [authError, setAuthError] = useState("");
 const [authLoading, setAuthLoading] = useState(false);
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-const [newEvent, setNewEvent] = useState({
-    title: "",
-    subject: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-    location: "",
-    type: "Lecture"
-});
-
+const [newEvent, setNewEvent] = useState({ ...emptyEvent });
 
   useEffect(() => {
   if (token) {
@@ -85,7 +75,7 @@ useEffect(() => {
 const fetchTasks = async () => {
   try {
     const response = await axios.get(
-      "http://localhost:5000/api/tasks"
+      `${API_URL}/tasks`
     );
 
     setTasks(response.data);
@@ -98,7 +88,7 @@ const fetchTasks = async () => {
 const fetchEvents = async () => {
     try {
         const response = await axios.get(
-            "http://localhost:5000/api/events"
+            `${API_URL}/events`
         );
 
         setEvents(response.data);
@@ -109,7 +99,6 @@ const fetchEvents = async () => {
 
     }
 };
-
 
   // -----------------------------
   // ADD TASK
@@ -126,7 +115,7 @@ const handleAddTask = async (e) => {
   try {
     if (editingTaskId) {
       const response = await axios.put(
-        `http://localhost:5000/api/tasks/${editingTaskId}`,
+        `${API_URL}/tasks/${editingTaskId}`,
         newTask
       );
 
@@ -137,7 +126,7 @@ const handleAddTask = async (e) => {
       );
     } else {
       const response = await axios.post(
-        "http://localhost:5000/api/tasks",
+        `${API_URL}/tasks`,
         newTask
       );
 
@@ -147,12 +136,7 @@ const handleAddTask = async (e) => {
       ]);
     }
 
-    setNewTask({
-      title: "",
-      subject: "",
-      dueDate: "",
-      priority: "Medium"
-    });
+    setNewTask({ ...emptyTask });
     setEditingTaskId(null);
     setShowTaskForm(false);
   } catch (error) {
@@ -178,22 +162,7 @@ const handleEditTask = (task) => {
 const closeTaskForm = () => {
   setShowTaskForm(false);
   setEditingTaskId(null);
-  setNewTask({
-    title: "",
-    subject: "",
-    dueDate: "",
-    priority: "Medium"
-  });
-};
-
-const emptyEvent = {
-    title: "",
-    subject: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-    location: "",
-    type: "Lecture"
+  setNewTask({ ...emptyTask });
 };
 
 const openNewEventForm = () => {
@@ -243,7 +212,7 @@ const handleAddEvent = async (e) => {
     try {
         if (editingEventId) {
             const response = await axios.put(
-                `http://localhost:5000/api/events/${editingEventId}`,
+                `${API_URL}/events/${editingEventId}`,
                 newEvent
             );
 
@@ -255,7 +224,7 @@ const handleAddEvent = async (e) => {
             setSelectedDate(newEvent.date);
         } else {
             const response = await axios.post(
-                "http://localhost:5000/api/events",
+                `${API_URL}/events`,
                 newEvent
             );
 
@@ -282,7 +251,7 @@ const handleDeleteEvent = async (eventId) => {
     }
 
     try {
-        await axios.delete(`http://localhost:5000/api/events/${eventId}`);
+        await axios.delete(`${API_URL}/events/${eventId}`);
         setEvents((currentEvents) =>
             currentEvents.filter((event) => event._id !== eventId)
         );
@@ -402,7 +371,7 @@ const goToToday = () => {
  const handleDeleteTask = async (id) => {
   try {
     await axios.delete(
-      `http://localhost:5000/api/tasks/${id}`
+      `${API_URL}/tasks/${id}`
     );
 
     setTasks((currentTasks) =>
@@ -414,7 +383,6 @@ const goToToday = () => {
   }
 };
 
-
 // -----------------------------
 // MARK TASK COMPLETE
 // -----------------------------
@@ -422,7 +390,7 @@ const goToToday = () => {
 const handleCompleteTask = async (id, completed) => {
   try {
     const response = await axios.put(
-      `http://localhost:5000/api/tasks/${id}`,
+      `${API_URL}/tasks/${id}`,
       {
         completed: !completed
       }
@@ -439,7 +407,6 @@ const handleCompleteTask = async (id, completed) => {
   }
 };
 
-    
 const handleAuthSubmit = async (e) => {
   e.preventDefault();
   setAuthError("");
@@ -462,34 +429,17 @@ const handleAuthSubmit = async (e) => {
           };
 
     const response = await axios.post(
-      `http://localhost:5000/api/auth/${endpoint}`,
+      `${API_URL}/auth/${endpoint}`,
       payload
     );
 
     const { token: newToken, user: loggedInUser } = response.data;
-
-      axios.defaults.headers.common.Authorization =
-          `Bearer ${newToken}`;
-
-      localStorage.setItem("studyflow_token", newToken);
-
-      localStorage.setItem(
-          "studyflow_user",
-          JSON.stringify(loggedInUser)
-      );
-
-      setToken(newToken);
-      setUser(loggedInUser);
-
+    axios.defaults.headers.common.Authorization = `Bearer ${newToken}`;
     localStorage.setItem("studyflow_token", newToken);
-    localStorage.setItem(
-      "studyflow_user",
-      JSON.stringify(loggedInUser)
-    );
-
+    localStorage.setItem("studyflow_user", JSON.stringify(loggedInUser));
     setToken(newToken);
     setUser(loggedInUser);
-    setAuthForm({ name: "", email: "", password: "" });
+    setAuthForm({ ...emptyAuthForm });
     setShowAccountMenu(false);
   } catch (error) {
     setAuthError(
@@ -513,12 +463,11 @@ const handleLogout = () => {
   setEvents([]);
   setShowAccountMenu(false);
   setCurrentView("dashboard");
-  setAuthForm({ name: "", email: "", password: "" });
+  setAuthForm({ ...emptyAuthForm });
   setAuthError("");
   setAuthMode("login");
 };
 
-    
 if (!token || !user) {
   return (
     <div className="auth-page">
@@ -630,11 +579,7 @@ if (!token || !user) {
                 authMode === "login" ? "register" : "login"
               );
               setAuthError("");
-              setAuthForm({
-                name: "",
-                email: "",
-                password: ""
-              });
+              setAuthForm({ ...emptyAuthForm });
             }}
           >
             {authMode === "login"
@@ -661,7 +606,6 @@ if (!token || !user) {
           <span>StudyFlow</span>
         </div>
 
-
         <nav className="navigation">
 
           <button
@@ -686,7 +630,6 @@ if (!token || !user) {
 
     </nav>
 
-
         <div className="sidebar-bottom">
 
           <a href="#" className="nav-item">
@@ -697,7 +640,6 @@ if (!token || !user) {
         </div>
 
       </aside>
-
 
       {/* =========================
           MAIN CONTENT
@@ -723,7 +665,6 @@ if (!token || !user) {
             </p>
 
           </div>
-
 
           <div className="profile">
 
@@ -760,9 +701,7 @@ if (!token || !user) {
 
             </div>
 
-
             <div className="account-divider"></div>
-
 
             <button
                 type="button"
@@ -779,7 +718,6 @@ if (!token || !user) {
 </div>
 
         </header>
-
 
 {/* =========================
     URGENT & UPCOMING
@@ -876,7 +814,6 @@ if (!token || !user) {
 
 </section>
 
-
         {/* =========================
             TASKS
         ========================= */}
@@ -894,7 +831,6 @@ if (!token || !user) {
             </span>
 
           </div>
-
 
           <div className="task-list">
 
@@ -924,7 +860,6 @@ if (!token || !user) {
                     {task.completed ? "✓" : ""}
                   </button>
 
-
                   <div className="task-details">
 
                     <h3>
@@ -938,13 +873,11 @@ if (!token || !user) {
 
                   </div>
 
-
                   <span
                     className={`priority ${task.priority.toLowerCase()}`}
                   >
                     {task.priority}
                   </span>
-
 
                   <button
                     type="button"
@@ -972,7 +905,6 @@ if (!token || !user) {
           </div>
 
         </section>
-
 
 {/* =========================
     TODAY'S SCHEDULE
@@ -1059,7 +991,6 @@ if (!token || !user) {
 
 </section>
 
-
         {/* =========================
             QUICK ACTIONS
         ========================= */}
@@ -1074,9 +1005,7 @@ if (!token || !user) {
 
           </div>
 
-
           <div className="quick-actions">
-
 
             {/* ADD TASK */}
 
@@ -1102,7 +1031,6 @@ if (!token || !user) {
               </div>
 
             </button>
-
 
             {/* ADD EVENT */}
 
@@ -1134,7 +1062,6 @@ if (!token || !user) {
 
         </>
 
-
     ) : (
 
         <section className="section calendar-section">
@@ -1150,7 +1077,6 @@ if (!token || !user) {
               </div>
 
           </div>
-
 
     <div className="calendar-card">
 
@@ -1184,14 +1110,12 @@ if (!token || !user) {
 
         </div>
 
-
         <button
             className="calendar-today-button"
             onClick={goToToday}
         >
             Today
         </button>
-
 
         {/* WEEK DAYS */}
 
@@ -1206,7 +1130,6 @@ if (!token || !user) {
             <div>Sat</div>
 
         </div>
-
 
         {/* CALENDAR DAYS */}
 
@@ -1255,7 +1178,6 @@ if (!token || !user) {
                             {date.getDate()}
                         </span>
 
-
                         <div className="calendar-day-events">
 
                             {dayEvents.map((event) => (
@@ -1278,7 +1200,6 @@ if (!token || !user) {
 
         </div>
 
-
         {/* SELECTED DATE DETAILS */}
 
         {selectedDate && (
@@ -1300,7 +1221,6 @@ if (!token || !user) {
                     </button>
 
                 </div>
-
 
                 {events.filter(
                     (event) =>
@@ -1404,7 +1324,6 @@ if (!token || !user) {
 
 </section>
 
-
     )}
 
       </main>
@@ -1450,9 +1369,7 @@ if (!token || !user) {
 
             </div>
 
-
             <form onSubmit={handleAddTask}>
-
 
               {/* TASK TITLE */}
 
@@ -1476,7 +1393,6 @@ if (!token || !user) {
 
               </div>
 
-
               {/* SUBJECT */}
 
               <div className="form-group">
@@ -1499,7 +1415,6 @@ if (!token || !user) {
 
               </div>
 
-
               {/* DUE DATE */}
 
               <div className="form-group">
@@ -1520,7 +1435,6 @@ if (!token || !user) {
                 />
 
               </div>
-
 
               {/* PRIORITY */}
 
@@ -1555,7 +1469,6 @@ if (!token || !user) {
                 </select>
 
               </div>
-
 
               {/* BUTTONS */}
 
@@ -1608,7 +1521,6 @@ if (!token || !user) {
 
             </div>
 
-
             <form onSubmit={handleAddEvent}>
 
                 <div className="form-group">
@@ -1627,7 +1539,6 @@ if (!token || !user) {
                     />
                 </div>
 
-
                 <div className="form-group">
                     <label>Subject / Category</label>
 
@@ -1644,7 +1555,6 @@ if (!token || !user) {
                     />
                 </div>
 
-
                 <div className="form-group">
                     <label>Date</label>
 
@@ -1659,7 +1569,6 @@ if (!token || !user) {
                         }
                     />
                 </div>
-
 
                 <div className="form-group">
                     <label>Start Time</label>
@@ -1676,7 +1585,6 @@ if (!token || !user) {
                     />
                 </div>
 
-
                 <div className="form-group">
                     <label>End Time</label>
 
@@ -1691,7 +1599,6 @@ if (!token || !user) {
                         }
                     />
                 </div>
-
 
                 <div className="form-group">
                     <label>Location</label>
@@ -1708,7 +1615,6 @@ if (!token || !user) {
                         }
                     />
                 </div>
-
 
                 <div className="form-group">
                     <label>Event Type</label>
@@ -1743,7 +1649,6 @@ if (!token || !user) {
                         </option>
                     </select>
                 </div>
-
 
                 <div className="modal-actions">
 
