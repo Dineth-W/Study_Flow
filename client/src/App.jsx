@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
+import AuthPage from "./components/AuthPage";
+import Sidebar from "./components/Sidebar";
+import SettingsPage from "./components/SettingsPage";
 
 const API_URL = "http://localhost:5000/api";
 const emptyTask = { title: "", subject: "", dueDate: "", priority: "Medium" };
@@ -30,6 +33,10 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(null);
 
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [settingsMessage, setSettingsMessage] = useState("");
+  const [settingsError, setSettingsError] = useState("");
+  const [settingsLoading, setSettingsLoading] = useState(false);
 
 const [token, setToken] = useState(
   () => localStorage.getItem("studyflow_token")
@@ -451,6 +458,82 @@ const handleAuthSubmit = async (e) => {
   }
 };
 
+const handleChangePassword = async (e) => {
+  e.preventDefault();
+  setSettingsMessage("");
+  setSettingsError("");
+
+  if (passwordForm.newPassword.length < 6) {
+    setSettingsError("The new password must be at least 6 characters.");
+    return;
+  }
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    setSettingsError("The new passwords do not match.");
+    return;
+  }
+
+  setSettingsLoading(true);
+  try {
+    const response = await axios.put(`${API_URL}/auth/change-password`, {
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword
+    });
+    setSettingsMessage(response.data.message || "Password changed successfully.");
+    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  } catch (error) {
+    setSettingsError(error.response?.data?.message || "Could not change the password.");
+  } finally {
+    setSettingsLoading(false);
+  }
+};
+
+const handleProfileImage = async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = "";
+  if (!file) return;
+  if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+    setSettingsError("Choose a JPG, PNG, WEBP or GIF image.");
+    setSettingsMessage("");
+    return;
+  }
+  if (file.size > 1.5 * 1024 * 1024) {
+    setSettingsError("The image must be smaller than 1.5 MB.");
+    setSettingsMessage("");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const response = await axios.put(`${API_URL}/auth/profile`, { profileImage: reader.result });
+      const updatedUser = { ...user, ...response.data.user };
+      setUser(updatedUser);
+      localStorage.setItem("studyflow_user", JSON.stringify(updatedUser));
+      setSettingsError("");
+      setSettingsMessage("Profile picture saved.");
+    } catch (error) {
+      setSettingsError(error.response?.data?.message || "Could not save the profile picture.");
+      setSettingsMessage("");
+    }
+  };
+  reader.onerror = () => setSettingsError("Could not read that image.");
+  reader.readAsDataURL(file);
+};
+
+const handleRemoveProfileImage = async () => {
+  setSettingsMessage("");
+  setSettingsError("");
+  try {
+    const response = await axios.put(`${API_URL}/auth/profile`, { profileImage: "" });
+    const updatedUser = { ...user, ...response.data.user };
+    setUser(updatedUser);
+    localStorage.setItem("studyflow_user", JSON.stringify(updatedUser));
+    setSettingsMessage("Profile picture removed.");
+  } catch (error) {
+    setSettingsError(error.response?.data?.message || "Could not remove the profile picture.");
+  }
+};
+
 const handleLogout = () => {
   localStorage.removeItem("studyflow_token");
   localStorage.removeItem("studyflow_user");
@@ -470,125 +553,16 @@ const handleLogout = () => {
 
 if (!token || !user) {
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">
-          <div className="logo-icon">S</div>
-          <span>StudyFlow</span>
-        </div>
-
-        <h1>
-          {authMode === "login"
-            ? "Welcome back!"
-            : "Create your account"}
-        </h1>
-
-        <p className="auth-subtitle">
-          {authMode === "login"
-            ? "Sign in to continue your study journey."
-            : "Start organizing your studies with StudyFlow."}
-        </p>
-
-        <form onSubmit={handleAuthSubmit}>
-          {authMode === "register" && (
-            <div className="form-group">
-              <label>Full name</label>
-              <input
-                type="text"
-                required
-                autoComplete="name"
-                placeholder="Enter your name"
-                value={authForm.name}
-                onChange={(e) =>
-                  setAuthForm({
-                    ...authForm,
-                    name: e.target.value
-                  })
-                }
-              />
-            </div>
-          )}
-
-          <div className="form-group">
-            <label>Email address</label>
-            <input
-              type="email"
-              required
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={authForm.email}
-              onChange={(e) =>
-                setAuthForm({
-                  ...authForm,
-                  email: e.target.value
-                })
-              }
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              autoComplete={
-                authMode === "login"
-                  ? "current-password"
-                  : "new-password"
-              }
-              placeholder="At least 6 characters"
-              value={authForm.password}
-              onChange={(e) =>
-                setAuthForm({
-                  ...authForm,
-                  password: e.target.value
-                })
-              }
-            />
-          </div>
-
-          {authError && (
-            <p className="auth-error" role="alert">
-              {authError}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            className="auth-submit"
-            disabled={authLoading}
-          >
-            {authLoading
-              ? "Please wait..."
-              : authMode === "login"
-                ? "Log in"
-                : "Create account"}
-          </button>
-        </form>
-
-        <p className="auth-switch">
-          {authMode === "login"
-            ? "Don't have an account?"
-            : "Already have an account?"}{" "}
-
-          <button
-            type="button"
-            onClick={() => {
-              setAuthMode(
-                authMode === "login" ? "register" : "login"
-              );
-              setAuthError("");
-              setAuthForm({ ...emptyAuthForm });
-            }}
-          >
-            {authMode === "login"
-              ? "Sign up"
-              : "Log in"}
-          </button>
-        </p>
-      </div>
-    </div>
+    <AuthPage
+      authMode={authMode}
+      setAuthMode={setAuthMode}
+      authForm={authForm}
+      setAuthForm={setAuthForm}
+      authError={authError}
+      setAuthError={setAuthError}
+      authLoading={authLoading}
+      handleAuthSubmit={handleAuthSubmit}
+    />
   );
 }
 
@@ -599,47 +573,13 @@ if (!token || !user) {
           SIDEBAR
       ========================= */}
 
-      <aside className="sidebar">
-
-        <div className="logo">
-          <div className="logo-icon">S</div>
-          <span>StudyFlow</span>
-        </div>
-
-        <nav className="navigation">
-
-          <button
-    className={`nav-item ${
-        currentView === "dashboard" ? "active" : ""
-    }`}
-    onClick={() => setCurrentView("dashboard")}
->
-    <span>🏠</span>
-    Dashboard
-    </button>
-
-          <button
-          className={`nav-item ${
-              currentView === "calendar" ? "active" : ""
-          }`}
-          onClick={() => setCurrentView("calendar")}
-      >
-          <span>📅</span>
-          Calendar
-      </button>
-
-    </nav>
-
-        <div className="sidebar-bottom">
-
-          <a href="#" className="nav-item">
-            <span>⚙️</span>
-            Settings
-          </a>
-
-        </div>
-
-      </aside>
+      <Sidebar
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        setShowAccountMenu={setShowAccountMenu}
+        setSettingsMessage={setSettingsMessage}
+        setSettingsError={setSettingsError}
+      />
 
       {/* =========================
           MAIN CONTENT
@@ -674,7 +614,7 @@ if (!token || !user) {
             setShowAccountMenu(!showAccountMenu)
         }
     >
-        {user.name.charAt(0).toUpperCase()}
+        {user.profileImage ? <img className="avatar-image" src={user.profileImage} alt="Profile" /> : user.name.charAt(0).toUpperCase()}
     </button>
 
     {showAccountMenu && (
@@ -684,7 +624,7 @@ if (!token || !user) {
             <div className="account-info">
 
                 <div className="account-avatar">
-                    {user.name.charAt(0).toUpperCase()}
+                    {user.profileImage ? <img className="avatar-image" src={user.profileImage} alt="Profile" /> : user.name.charAt(0).toUpperCase()}
                 </div>
 
                 <div>
@@ -868,7 +808,7 @@ if (!token || !user) {
 
                     <p>
                       {task.subject || "No subject"} • Due{" "}
-                      {task.dueDate}
+                      {task.dueDate?.slice(0, 10)}
                     </p>
 
                   </div>
@@ -1062,7 +1002,7 @@ if (!token || !user) {
 
         </>
 
-    ) : (
+    ) : currentView === "calendar" ? (
 
         <section className="section calendar-section">
 
@@ -1324,6 +1264,18 @@ if (!token || !user) {
 
 </section>
 
+    ) : (
+      <SettingsPage
+        user={user}
+        passwordForm={passwordForm}
+        setPasswordForm={setPasswordForm}
+        handleChangePassword={handleChangePassword}
+        handleProfileImage={handleProfileImage}
+        handleRemoveProfileImage={handleRemoveProfileImage}
+        settingsLoading={settingsLoading}
+        settingsMessage={settingsMessage}
+        settingsError={settingsError}
+      />
     )}
 
       </main>
