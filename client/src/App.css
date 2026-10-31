@@ -1050,6 +1050,11 @@ button {
   justify-content: center;
   padding: 24px;
   background: #f5f6fb;
+
+  background-image: url("/studyflow-background.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .auth-card {
