@@ -2,7 +2,7 @@ import React from "react";
 
 function Dashboard({
   user, tasks, events, showAccountMenu, setShowAccountMenu, handleLogout,
-  setCurrentView, handleCompleteTask, handleEditTask, setShowTaskForm,
+  setCurrentView, handleCompleteTask, handleEditTask, handleDeleteTask, setShowTaskForm,
   openNewEventForm, formatDateKey, formatTime
 }) {
   return (

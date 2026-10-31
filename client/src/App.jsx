@@ -4,6 +4,8 @@ import "./App.css";
 import AuthPage from "./components/AuthPage";
 import Sidebar from "./components/Sidebar";
 import SettingsPage from "./components/SettingsPage";
+import Dashboard from "./components/Dashboard";
+import Calendar from "./components/Calendar";
 
 const API_URL = "http://localhost:5000/api";
 const emptyTask = { title: "", subject: "", dueDate: "", priority: "Medium" };
@@ -598,6 +600,7 @@ if (!token || !user) {
         setCurrentView={setCurrentView}
         handleCompleteTask={handleCompleteTask}
         handleEditTask={handleEditTask}
+        handleDeleteTask={handleDeleteTask}
         setShowTaskForm={setShowTaskForm}
         openNewEventForm={openNewEventForm}
         formatDateKey={formatDateKey}
